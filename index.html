@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0f16">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(console.error);
+  });
+}
+</script>
+
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>Disc Golf AI Coach v1.5 — Preloaded (Full + Form‑check)</title>
+<style>
+  :root{--bg:#0b0f16;--panel:#121827;--muted:#99a3b3;--line:#1f2a3a;--accent:#3b82f6;--text:#e8eef7;--ok:#34d399}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  header{position:sticky;top:0;background:rgba(11,15,22,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:10}
+  .nav{display:flex;gap:8px;align-items:center;padding:10px 12px;flex-wrap:wrap}
+  .nav b{font-size:16px;margin-right:auto}
+  .btn{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:9px 12px;border-radius:10px;cursor:pointer}
+  .btn.primary{background:var(--accent);border-color:var(--accent)}
+  .btn.small{padding:6px 10px;font-size:12px}
+  main{padding:14px;max-width:980px;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#0d1422;border:1px solid var(--line);margin-right:6px;font-size:12px}
+  .muted{color:var(--muted)} .small{font-size:12px} .hidden{display:none}
+  table{width:100%;border-collapse:collapse;font-size:12px} th,td{border-bottom:1px solid var(--line);padding:6px;text-align:left}
+  ul{margin:8px 0 0 18px}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav">
+    <b>🥏 AI Coach v1.5</b>
+    <button class="btn small" data-nav="home">Hjem</button>
+    <button class="btn small" data-nav="bag">Bag</button>
+    <button class="btn small" data-nav="course">Bane</button>
+    <button class="btn small" data-nav="caddie">Caddie</button>
+    <button class="btn small" data-nav="form">Form</button>
+  </div>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section id="view-home" class="card">
+    <h2>Klar</h2>
+    <p class="muted">Forhåndslastet: <b>Øya DGK (18 hull)</b> + <b>ThomasBag v2.4</b>. Offline‑klar.</p>
+    <div class="row"><span class="pill" id="info-course">Bane: —</span><span class="pill" id="info-bag">Bag: —</span></div>
+  </section>
+
+  <!-- BAG -->
+  <section id="view-bag" class="card hidden">
+    <div class="row"><button class="btn small" data-nav="home">↩ Tilbake</button><h2>Bag</h2></div>
+    <div id="bagList"></div>
+  </section>
+
+  <!-- COURSE -->
+  <section id="view-course" class="card hidden">
+    <div class="row"><button class="btn small" data-nav="home">↩ Tilbake</button><h2>Bane</h2></div>
+    <div class="row small muted">Ren Tjing: hull/par/lengde/tags.</div>
+    <div id="courseBox" class="card small"></div>
+  </section>
+
+  <!-- CADDIE -->
+  <section id="view-caddie" class="card hidden">
+    <div class="row"><button class="btn small" data-nav="home">↩ Tilbake</button><h2>Caddie-modus</h2></div>
+    <div class="row">
+      <button class="btn small" id="prevHole">◀ Hull ‑1</button>
+      <div class="pill" id="holeLabel">Hull 1</div>
+      <button class="btn small" id="nextHole">Hull +1 ▶</button>
+      <div class="pill" id="scoreLabel">Score ±0</div>
+      <button class="btn primary small" id="quickCast">⚡ Hurtig‑kast</button>
+    </div>
+    <div id="caddieOut" class="card small">Trykk «Hurtig‑kast» for anbefaling.</div>
+    <div class="row">
+      <label>Resultat</label>
+      <select id="holeResult">
+        <option value="Par">Par</option><option value="Birdie">Birdie</option><option value="Bogey">Bogey</option>
+        <option value="Ace">Ace</option><option value="OB">OB</option><option value="Up‑Down">Up‑Down</option>
+      </select>
+      <button class="btn" id="logAdd">Logg kast</button>
+      <button class="btn" id="logReset">Nullstill runde</button>
+    </div>
+    <div id="logBox" class="card small"></div>
+  </section>
+
+  <!-- FORM-CHECK & CUES -->
+  <section id="view-form" class="card hidden">
+    <div class="row"><button class="btn small" data-nav="home">↩ Tilbake</button><h2>Video form‑check & cues</h2></div>
+    <div class="card small">
+      <b>Vinkel‑guide:</b>
+      <ul>
+        <li>Side: hoftehøyde, 5–8 m avstand, 60–90 fps.</li>
+        <li>Front: rett på linja, se release‑høyde og nose.</li>
+        <li>Marker plant‑fot (tape/tee) og kastelinje.</li>
+      </ul>
+      <b>Sjekkliste:</b>
+      <ul>
+        <li>Last/coil → hofte foran skulder ved plant.</li>
+        <li>Albuens ledelinje, underarm pisker nær kroppen.</li>
+        <li>Nose‑down, flat håndleddsvinkel ved slipp.</li>
+        <li>Rotasjon: hofte → skulder → arm; balanse i oppfølging.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <b>Cues per hull</b>
+      <div class="row">
+        <input id="cueHole" type="number" min="1" value="1" style="max-width:90px"/>
+        <input id="cueText" placeholder="F.eks: Tidlig hyzer, hold skuldre lave"/>
+        <button class="btn" id="saveCue">Lagre</button>
+        <button class="btn" id="clearCue">Slett</button>
+      </div>
+      <div id="cueList" class="small muted" style="margin-top:8px"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+// Preloaded
+const PRELOADED_BAG = [{"name": "Clash Candy (Hardy) #1", "type": "Putter", "s": 3, "g": 3, "t": 0, "f": 2, "bh": 65, "fh": 50, "role": "Primær putting‑putter. Nøytral, trygg i C1."}, {"name": "Clash Candy (Hardy) #2", "type": "Putter", "s": 3, "g": 3, "t": 0, "f": 2, "bh": 65, "fh": 50, "role": "Backup putting‑putter."}, {"name": "Innova Aviar (Nexus)", "type": "Putter", "s": 2, "g": 3, "t": 0, "f": 1, "bh": 70, "fh": 55, "role": "Kaste‑putter 40–75 m."}, {"name": "Discmania Tactic", "type": "Approach", "s": 4, "g": 2, "t": 0, "f": 3, "bh": 80, "fh": 70, "role": "OS approach 50–80 m."}, {"name": "Kastaplast Berg (K1)", "type": "Approach", "s": 1, "g": 1, "t": 0, "f": 2, "bh": 75, "fh": 55, "role": "Null‑glide kontroll."}, {"name": "Innova Toro (Champion)", "type": "Approach", "s": 4, "g": 2, "t": 1, "f": 3, "bh": 85, "fh": 75, "role": "OS FH‑approach / korte driven i vind."}, {"name": "Discraft Malita (Prototype)", "type": "Mid", "s": 5, "g": 5, "t": -1, "f": 1, "bh": 105, "fh": 90, "role": "Lett turn, laser 70–95 m."}, {"name": "Axiom Reactor", "type": "Mid", "s": 5, "g": 5, "t": 0, "f": 2, "bh": 105, "fh": 90, "role": "Stabil‑nøytral arbeidshest."}, {"name": "Innova Jay", "type": "Mid", "s": 5, "g": 4, "t": 0, "f": 1, "bh": 105, "fh": 90, "role": "Rett til mild fade, standstill‑vennlig."}, {"name": "Axiom Crave (Eclipse)", "type": "Fairway", "s": 6, "g": 5, "t": -1, "f": 1, "bh": 115, "fh": 95, "role": "Flippy hyzer‑flip, 90–110 m."}, {"name": "Axiom Crave (Neutron)", "type": "Fairway", "s": 6, "g": 5, "t": -1, "f": 1, "bh": 115, "fh": 95, "role": "Nøytral Crave – baselinevalg."}, {"name": "Axiom Crave (Proton)", "type": "Fairway", "s": 6, "g": 5, "t": 0, "f": 1, "bh": 110, "fh": 90, "role": "Litt mer stabil – lett motvind."}, {"name": "Innova Teebird3", "type": "Fairway", "s": 8, "g": 4, "t": 0, "f": 2, "bh": 115, "fh": 100, "role": "Straight‑stable laser."}, {"name": "Kastaplast Idog", "type": "Fairway", "s": 7, "g": 5, "t": 0, "f": 2, "bh": 115, "fh": 100, "role": "Stabil arbeidshest med glide."}, {"name": "Innova Firebird", "type": "Fairway OS", "s": 9, "g": 3, "t": 0, "f": 4, "bh": 105, "fh": 100, "role": "Spike‑hyzer / motvind / utility."}, {"name": "Discmania Splice", "type": "Fairway OS", "s": 9, "g": 3, "t": 0, "f": 4, "bh": 100, "fh": 95, "role": "Ekstrem OS, korte FH‑punch."}, {"name": "Discraft Raptor (Titanium)", "type": "Fairway", "s": 9, "g": 4, "t": 0, "f": 2, "bh": 115, "fh": 105, "role": "Stabil kontroll, lett motvind."}, {"name": "Discmania DD3 (S-Line)", "type": "Driver", "s": 12, "g": 5, "t": -1, "f": 3, "bh": 145, "fh": 125, "role": "Kontrollert distance 125–145 m."}, {"name": "Discmania Nordic Phenom 3 (Horizon DD3)", "type": "Driver", "s": 12, "g": 5, "t": -1, "f": 3, "bh": 145, "fh": 125, "role": "Hoved‑driver, litt mer stabil."}, {"name": "Innova Destroyer", "type": "Driver", "s": 12, "g": 5, "t": -1, "f": 3, "bh": 145, "fh": 125, "role": "Bomber, sidevind."}, {"name": "Innova Boss (Champion)", "type": "Driver", "s": 13, "g": 5, "t": -1, "f": 3, "bh": 150, "fh": 130, "role": "Maks OS, motvind."}, {"name": "Discraft Force", "type": "Driver", "s": 12, "g": 5, "t": 0, "f": 3, "bh": 140, "fh": 120, "role": "Kontroll‑OS, lave linjer."}, {"name": "Discmania Cloud Breaker (DD3)", "type": "Driver", "s": 12, "g": 5, "t": -1, "f": 3, "bh": 145, "fh": 125, "role": "Glide‑DD3, medvind."}];
+const PRELOADED_COURSE = {"course_name": "Øya DGK", "source": "Tjing (ren import)", "holes": [{"hole": 1, "par": 3, "length_m": 123, "tags": ["OB"]}, {"hole": 2, "par": 3, "length_m": 92, "tags": ["OB"]}, {"hole": 3, "par": 5, "length_m": 270, "tags": []}, {"hole": 4, "par": 3, "length_m": 85, "tags": []}, {"hole": 5, "par": 3, "length_m": 111, "tags": ["OB", "Hazard"]}, {"hole": 6, "par": 3, "length_m": 118, "tags": ["OB"]}, {"hole": 7, "par": 3, "length_m": 127, "tags": ["OB"]}, {"hole": 8, "par": 3, "length_m": 80, "tags": ["OB"]}, {"hole": 9, "par": 3, "length_m": 75, "tags": ["OB"]}, {"hole": 10, "par": 4, "length_m": 190, "tags": ["OB"]}, {"hole": 11, "par": 4, "length_m": 185, "tags": ["OB", "Hazard"]}, {"hole": 12, "par": 4, "length_m": 189, "tags": ["OB", "Hazard"]}, {"hole": 13, "par": 3, "length_m": 85, "tags": ["OB", "Mando"]}, {"hole": 14, "par": 3, "length_m": 93, "tags": ["OB", "Mando"]}, {"hole": 15, "par": 4, "length_m": 212, "tags": ["OB", "Hazard"]}, {"hole": 16, "par": 4, "length_m": 208, "tags": ["OB"]}, {"hole": 17, "par": 3, "length_m": 92, "tags": ["OB", "Hazard"]}, {"hole": 18, "par": 4, "length_m": 149, "tags": ["OB", "Hazard", "Mando"]}]};
+
+// Keys
+const BAG_KEY="disc_coach_bag_v15", COURSE_KEY="disc_coach_course_v15", ROUND_KEY="disc_coach_round_v15", CUES_KEY="disc_coach_cues_v15";
+
+// State
+let bag = JSON.parse(localStorage.getItem(BAG_KEY)||"null") || PRELOADED_BAG;
+let course = JSON.parse(localStorage.getItem(COURSE_KEY)||"null") || PRELOADED_COURSE;
+let round = JSON.parse(localStorage.getItem(ROUND_KEY)||"null") || {course: course.course_name||"Øya DGK", hole:1, scoreRel:0, log:[]};
+let cues = JSON.parse(localStorage.getItem(CUES_KEY)||"null") || {};
+
+localStorage.setItem(BAG_KEY, JSON.stringify(bag));
+localStorage.setItem(COURSE_KEY, JSON.stringify(course));
+localStorage.setItem(ROUND_KEY, JSON.stringify(round));
+localStorage.setItem(CUES_KEY, JSON.stringify(cues));
+
+// Nav
+function show(v){['home','bag','course','caddie','form'].forEach(s=>document.getElementById('view-'+s).classList.add('hidden'));document.getElementById('view-'+v).classList.remove('hidden');}
+addEventListener('click',e=>{const v=e.target.getAttribute('data-nav'); if(v) show(v);});
+
+// Home
+function fillHome(){
+  document.getElementById('info-course').textContent = `Bane: ${course.course_name} (${(course.holes||[]).length} hull)`;
+  document.getElementById('info-bag').textContent = `Bag: ${(bag||[]).length} discer`;
+}
+
+// Bag
+function renderBag(){
+  const box=document.getElementById('bagList');
+  box.innerHTML = (bag||[]).map(d=>`<div class="card small"><b>${d.name}</b> <span class="pill">${d.type}</span> <span class="pill">${d.s}/${d.g}/${d.t}/${d.f}</span>${d.role?` <span class='pill'>${d.role}</span>`:""}<br><span class="muted">BH ${d.bh||'-'} m • FH ${d.fh||'-'} m</span></div>`).join('');
+}
+
+// Course
+function renderCourse(){
+  const rows=(course.holes||[]).map(h=>`<tr><td>${h.hole}</td><td>${h.par}</td><td>${h.length_m} m</td><td>${(h.tags||[]).join(', ')||'—'}</td></tr>`).join('');
+  document.getElementById('courseBox').innerHTML = `<table><thead><tr><th>#</th><th>Par</th><th>Lengde</th><th>Tags</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// Simple pick
+function pickShot(len){
+  let best=null;
+  for(const d of (bag||[])){ const cap=d.bh||110; const need=len/cap; let s=100; if(need>1.1)s-=(need-1.1)*200; if(need<0.6)s-=(0.6-need)*80; if(Math.abs(d.t)<=1)s+=6; if(d.f<=2)s+=3; if(!best||s>best.sc)best={d,sc:s}; }
+  return best?.d || (bag||[])[0];
+}
+function holeLen(i){ return ((course.holes||[])[i]?.length_m)||0; }
+function setHoleLabel(){ document.getElementById('holeLabel').textContent=`Hull ${round.hole}`; document.getElementById('scoreLabel').textContent=`Score ${round.scoreRel>=0?'+':''}${round.scoreRel}`; }
+
+prevHole.onclick=()=>{ round.hole=Math.max(1,round.hole-1); localStorage.setItem(ROUND_KEY,JSON.stringify(round)); setHoleLabel(); };
+nextHole.onclick=()=>{ const max=(course.holes||[]).length; round.hole=Math.min(max,round.hole+1); localStorage.setItem(ROUND_KEY,JSON.stringify(round)); setHoleLabel(); };
+quickCast.onclick=()=>{ const i=round.hole-1; const len=holeLen(i); const disc=pickShot(len); const h=(course.holes||[])[i]; caddieOut.innerHTML = `<b>${course.course_name}</b> — Hull ${h.hole} (Par ${h.par}, ${h.length_m} m)<br><span class='pill'>${disc.type}</span> <span class='pill'>${disc.name}</span>`; window._lastDiscName=disc.name; };
+
+logAdd.onclick=()=>{ const res=holeResult.value; const used=window._lastDiscName||'Ukjent disc'; round.log.push({hole:round.hole,disc:used,result:res}); if(res==='Birdie')round.scoreRel-=1; else if(res==='Bogey')round.scoreRel+=1; else if(res==='Ace')round.scoreRel-=2; localStorage.setItem(ROUND_KEY,JSON.stringify(round)); renderLog(); setHoleLabel(); };
+logReset.onclick=()=>{ round.log=[]; round.scoreRel=0; localStorage.setItem(ROUND_KEY,JSON.stringify(round)); renderLog(); setHoleLabel(); };
+function renderLog(){ const box=logBox; if(!round.log.length){ box.innerHTML='<span class="muted">Ingen kast logget ennå.</span>'; return; } const rows=round.log.map(e=>`<tr><td>${e.hole}</td><td>${e.disc}</td><td>${e.result}</td></tr>`).join(''); box.innerHTML=`<table><thead><tr><th>Hull</th><th>Disc</th><th>Resultat</th></tr></thead><tbody>${rows}</tbody></table>`; }
+
+// Cues persistence
+function renderCues(){
+  const arr = Object.keys(cues).sort((a,b)=>+a-+b).map(k=>`<span class='pill'>Hull ${k}: ${cues[k]}</span>`).join(' ');
+  document.getElementById('cueList').innerHTML = arr || '<span class="muted">Ingen cues lagret ennå.</span>';
+}
+saveCue.onclick=()=>{ const h=parseInt(cueHole.value,10)||1; const t=(cueText.value||'').trim(); if(!t) return; cues[h]=t; localStorage.setItem(CUES_KEY, JSON.stringify(cues)); cueText.value=''; renderCues(); };
+clearCue.onclick=()=>{ const h=parseInt(cueHole.value,10)||1; delete cues[h]; localStorage.setItem(CUES_KEY, JSON.stringify(cues)); renderCues(); };
+
+// Boot
+fillHome(); renderBag(); renderCourse(); renderLog(); renderCues(); setHoleLabel();
+</script>
+</body>
+</html>
